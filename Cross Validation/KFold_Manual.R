@@ -1,24 +1,28 @@
-#make this example reproducible
-set.seed(0)
 
 #define the dataset
-data <- mtcars[ , c("mpg", "disp", "hp", "drat")]
+cars_data <- mtcars[ , c("mpg", "disp", "hp", "drat")]
 
+#make this example reproducible
+set.seed(349872347)
+cars_data <- cars_data[sample(nrow(cars_data)),]
 
-data<-data[sample(nrow(data)),]
-
-KFold=function(){
-  
+KFold_sq_err <- function(i, nfold) {
   #create 10 folds
-  folds <- cut(seq(1,nrow(data)),breaks=10,labels=FALSE)
-  score=list()
+  folds <- cut(1:nrow(cars_data), breaks=nfold, labels=FALSE)
  
-  test_indices <- which(folds==i,arr.ind=TRUE)
-  test<- data[test_indices, ]
-  train<- data[-test_indices, ]
+  test_indices <- which(folds==i, arr.ind=TRUE)
+  test  <- cars_data[test_indices, ]
+  train <- cars_data[-test_indices, ]
   model <- lm(mpg ~ ., data = train)
   predictions <- predict(model, test)
-  score[[i]]<-((test$mpg-prediction)^2)}
+  (test$mpg-predictions)^2
+}
 
-MSE_per_i=sapply(1:10,KFold)
-sqrt(mean(unlist(MSE_per_i)))
+kfold_rmse <- function(nfold) {
+  sq_err <- unlist(sapply(1:nfold, KFold_sq_err, nfold=nfold))
+  sqrt(mean(sq_err))
+}
+
+kfold_rmse(5)
+kfold_rmse(10)
+kfold_rmse(32) # LOOCV
