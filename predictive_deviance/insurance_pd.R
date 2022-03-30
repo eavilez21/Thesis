@@ -32,3 +32,7 @@ pd_5fold <- kfold_pd(charges ~ ., outcome='charges', dataset = insurance, nfold=
 pd_10fold <- kfold_pd(charges ~ ., outcome='charges', dataset = insurance, nfold=10)
 pd_loocv <- kfold_pd(charges ~ ., outcome='charges', dataset = insurance)
 
+#Decision Tree
+insurance_tree<-rpart(pd_loocv~.,data=insurance,minsplit=2,minbucket=1)
+fancyRpartPlot(insurance_tree,caption=NULL)
+
