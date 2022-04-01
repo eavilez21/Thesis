@@ -45,7 +45,7 @@ library(rpart)
 library(rattle)
 library(rpart.plot)
 # library(RColorBrewer)
-insurance_tree <- rpart(pd_loocv~., data=insurance, minsplit=2, minbucket=1)
+insurance_tree <- rpart(pd_loocv~., data=insurance, minsplit=2, minbucket=1,cp=.00000000000001)
 fancyRpartPlot(insurance_tree,caption=NULL)
 
 # TODO
