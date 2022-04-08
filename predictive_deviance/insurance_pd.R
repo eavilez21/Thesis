@@ -48,6 +48,8 @@ library(rpart.plot)
 insurance_tree <- rpart(pd_loocv~., data=insurance, minsplit=2, minbucket=1,cp=.00000000000001)
 fancyRpartPlot(insurance_tree,caption=NULL)
 
+insurance_tree_struct<-as.Node(insurance_tree,digits = getOption("digits") - 1,use.n=TRUE)
+
 # TODO
 # - 1. Use "tree" instead of "rpart" to do the deviance tree
 #   - see if we can "traverse" the tree easily from the root
