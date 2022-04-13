@@ -75,6 +75,12 @@ grouped_deviants <- unname(unlist(dtree$deviant_groups))
 unique_deviants <- dtree$unique_deviants
 all_deviants <- c(grouped_deviants, unique_deviants)
 
+
+#Model less deviants
+new_insurance<-insurance[-all_deviants]
+new_pd_loocv <- kfold_pd(charges ~ ., outcome='charges', dataset = new_insurance)
+new_insurance_rpart<-rpart(new_pd_loocv~., data=new_insurance, minsplit=2, minbucket=1,cp=0)
+fancyRpartPlot(new_insurance_rpart, caption= NULL)
 # TODO
 # - 4. Let's remove the deviant groups and rerun the deviance tree
 #   - 4.1. Make a new dataset without all_deviants
