@@ -28,8 +28,8 @@ kfold_pd <- function(model, outcome, dataset, nfold=NULL) {
                 fitted_scores=fitted_scores))
 }
 
-pd_5fold <- kfold_pd(charges ~ ., outcome='charges', dataset = insurance, nfold=5)
-pd_10fold <- kfold_pd(charges ~ ., outcome='charges', dataset = insurance, nfold=10)
+# pd_5fold <- kfold_pd(charges ~ ., outcome='charges', dataset = insurance, nfold=5)
+# pd_10fold <- kfold_pd(charges ~ ., outcome='charges', dataset = insurance, nfold=10)
 pd_loocv <- kfold_pd(charges ~ ., outcome='charges', dataset = insurance)
 
 # VISUALIZATIONS
@@ -48,9 +48,9 @@ library(data.tree)
 library(tree)
 # library(RColorBrewer)
 insurance_rpart <- rpart(pd_loocv~., data=insurance, minsplit=2, minbucket=1,cp=.00000000000001)
-fancyRpartPlot(insurance_rpart,caption=NULL)
+# fancyRpartPlot(insurance_rpart,caption=NULL)
 
-insurance_data_tree <- as.Node(insurance_rpart, digits = getOption("digits") - 1, use.n=TRUE)
+# insurance_data_tree <- as.Node(insurance_rpart, digits = getOption("digits") - 1, use.n=TRUE)
 
 # library(tree)
 # insurance_tree <- tree(pd_loocv~., data=insurance, mindev = 0.000000001)
@@ -77,16 +77,48 @@ all_deviants <- c(grouped_deviants, unique_deviants)
 
 
 #Model less deviants
-new_insurance<-insurance[-all_deviants]
+new_insurance <- insurance[-all_deviants, ]
 new_pd_loocv <- kfold_pd(charges ~ ., outcome='charges', dataset = new_insurance)
+
+new_sorted_pd <- sort(new_pd_loocv)
+new_pd_95 <- quantile(new_sorted_pd, probs = c(0.025, 0.975))
+plot(new_sorted_pd, col=rgb(0.7, 0.7, 0.7, 0.5), pch=19)
+abline(h=new_pd_95)
+
+
 new_insurance_rpart<-rpart(new_pd_loocv~., data=new_insurance, minsplit=2, minbucket=1,cp=0)
-fancyRpartPlot(new_insurance_rpart, caption= NULL)
-# TODO
-# - 4. Let's remove the deviant groups and rerun the deviance tree
-#   - 4.1. Make a new dataset without all_deviants
-#   - 4.2. Compute PD values for the new dataset
-#   - 4.3. Fit a new rpart tree on it and examine the structure (can use deviance_tree function)
-# - 5. Let's see if the resulting deviance tree has natural large "subgroups"
+
+plot(new_insurance_rpart)
+default_new_insurance_rpart <- rpart(new_pd_loocv~., data=new_insurance)
+fancyRpartPlot(default_new_insurance_rpart, caption= NULL)
+
+library(data.tree)
+default_new_datatree <- as.Node(default_new_insurance_rpart)
+
+default_new_datatree$height # 6
+
+length(default_new_datatree$children)
+default_new_datatree$children[[1]]$rpart.id # node #2
+
+default_new_datatree$children[[2]]$rpart.id # node #3
+length(default_new_datatree$children[[2]]$children) # none!
+
+# TODO: Heterogeneity
+# 6. Automatically identify the combinations of 2, 3, 4, 5, 7 groups
+#   - write a function that, given the levels, will return child nodes
+#     - e.g., level=2 --> nodes 2, 3
+#     - e.g., level=3 --> nodes 4, 5, 3
+#     - e.g., level=4 --> nodes 4, 10, 11, 3
+# 7. Get the case numbers for any set of groups from the rpart
+#     - e.g., groups 4, 5, 3 --> list of 3 vectors (each has cases for its group) -- see semcoa
+# 8. Evaluate what makes these groups different
+#   - coefficients
+#   - avg pd, etc.
+# 9. How many groups are interesting?
+#   - create something like a screeplot with some metric to compare 
+# 10. Compare our groupings with other standard heterogeneity methods
+#   - ????
+
 
 # DONE
 # - 1. Use "tree" instead of "rpart" to do the deviance tree
@@ -100,3 +132,10 @@ fancyRpartPlot(new_insurance_rpart, caption= NULL)
 # - 3. Deviant Groups: Find nodes whose ultimate leaf cases have average PD in top/bottom 5% extreme
 #   - Find the "major" deviant groups (ignore any deviant subgroups)
 #   result: done!
+# - 4. Let's remove the deviant groups and rerun the deviance tree <NEW CONTRIBUTIONS START HERE>
+#   - 4.1. Make a new dataset without all_deviants
+#   - 4.2. Compute PD values for the new dataset
+#   - 4.3. Fit a new rpart tree on it and examine the structure (can use deviance_tree function)
+#   result: done!
+# - 5. Let's see if the resulting deviance tree has natural large "subgroups"
+#   result: done! finds 7 groups (N ~ 40-498)
