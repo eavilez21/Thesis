@@ -132,7 +132,13 @@ length(default_new_datatree$children[[2]]$children) # none!
   }
   }
 
-
+#Finding children
+ for (i in 1:max(sorted_levels$level)){
+   level_children<- na.omit(sorted_levels[sorted_levels$level==i,]$children)
+   
+   cat("Level",i+1,":",level_children, "\n")
+  }
+ 
 
 
 
