@@ -75,6 +75,18 @@ grouped_deviants <- unname(unlist(dtree$deviant_groups))
 unique_deviants <- dtree$unique_deviants
 all_deviants <- c(grouped_deviants, unique_deviants)
 
+#Find total number of cases for a set of groups
+no_deviant_group_cases<-function(groups,original_rpart_dataset,deviance_tree_object){
+   groups<-toupper(groups)
+  no_by_group<-sapply(groups,function(x){group_nodes_index<-deviance_tree_object$deviant_groups[x]
+               group_cases<-sapply(group_nodes_index,function(i) original_rpart_dataset$frame[i,]$n)
+               reduce(group_cases,sum)}) 
+  
+  print(no_by_group)
+  cat("Total number of cases for this set of groups is:", reduce(no_by_group,sum))}
+
+no_deviant_group_cases(c("a","B","C","D","E"),insurance_rpart,dtree)
+
 
 #Model less deviants
 new_insurance <- insurance[-all_deviants, ]
@@ -103,17 +115,6 @@ default_new_datatree$children[[1]]$rpart.id # node #2
 default_new_datatree$children[[2]]$rpart.id # node #3
 length(default_new_datatree$children[[2]]$children) # none!
 
-<<<<<<< HEAD
- to_dataframe<-ToDataFrameTree(default_new_datatree,'name','level','rpart.id','isLeaf',children= function(x){sapply(x$children,function(child)child$rpart.id)})
-  sorted_levels<-to_dataframe[order(to_dataframe$level),]
-  max_levels<-max(sorted_levels$level)
-  print(length(sorted_levels))
-  
-  leaves<-c()
-  leaves_test<-c()
-  
-  for (i in 1:length(sorted_levels$level)){
-=======
 to_dataframe<-ToDataFrameTree(default_new_datatree,'name','level','rpart.id','isLeaf',children= function(x){sapply(x$children,function(child)child$rpart.id)})
 sorted_levels<-to_dataframe[order(to_dataframe$level),]
 max_levels<-max(sorted_levels$level)
@@ -123,7 +124,6 @@ leaves<-c()
 leaves_test<-c()
   
 for (i in 1:length(sorted_levels$level)){
->>>>>>> c992a37a0050ae532f3b13a98ffba13c49287302
   if(sorted_levels$isLeaf[i]==TRUE){ 
     leaf<-sorted_levels$rpart.id[i]
     leaves<-c(leaves,leaf)
