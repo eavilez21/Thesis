@@ -103,6 +103,7 @@ default_new_datatree$children[[1]]$rpart.id # node #2
 default_new_datatree$children[[2]]$rpart.id # node #3
 length(default_new_datatree$children[[2]]$children) # none!
 
+<<<<<<< HEAD
  to_dataframe<-ToDataFrameTree(default_new_datatree,'name','level','rpart.id','isLeaf',children= function(x){sapply(x$children,function(child)child$rpart.id)})
   sorted_levels<-to_dataframe[order(to_dataframe$level),]
   max_levels<-max(sorted_levels$level)
@@ -112,6 +113,17 @@ length(default_new_datatree$children[[2]]$children) # none!
   leaves_test<-c()
   
   for (i in 1:length(sorted_levels$level)){
+=======
+to_dataframe<-ToDataFrameTree(default_new_datatree,'name','level','rpart.id','isLeaf',children= function(x){sapply(x$children,function(child)child$rpart.id)})
+sorted_levels<-to_dataframe[order(to_dataframe$level),]
+max_levels<-max(sorted_levels$level)
+print(length(sorted_levels))
+  
+leaves<-c()
+leaves_test<-c()
+  
+for (i in 1:length(sorted_levels$level)){
+>>>>>>> c992a37a0050ae532f3b13a98ffba13c49287302
   if(sorted_levels$isLeaf[i]==TRUE){ 
     leaf<-sorted_levels$rpart.id[i]
     leaves<-c(leaves,leaf)
@@ -132,6 +144,7 @@ length(default_new_datatree$children[[2]]$children) # none!
   }
   }
 
+<<<<<<< HEAD
 #Finding children
  for (i in 1:max(sorted_levels$level)){
    level_children<- na.omit(sorted_levels[sorted_levels$level==i,]$children)
@@ -139,6 +152,9 @@ length(default_new_datatree$children[[2]]$children) # none!
    cat("Level",i+1,":",level_children, "\n")
   }
  
+=======
+
+>>>>>>> c992a37a0050ae532f3b13a98ffba13c49287302
 
 
 
