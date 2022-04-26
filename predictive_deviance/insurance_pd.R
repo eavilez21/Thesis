@@ -107,57 +107,51 @@ fancyRpartPlot(default_new_insurance_rpart, caption= NULL)
 library(data.tree)
 default_new_datatree <- as.Node(default_new_insurance_rpart)
 
-default_new_datatree$height # 6
-
-length(default_new_datatree$children)
-default_new_datatree$children[[1]]$rpart.id # node #2
-
-default_new_datatree$children[[2]]$rpart.id # node #3
-length(default_new_datatree$children[[2]]$children) # none!
-
-to_dataframe<-ToDataFrameTree(default_new_datatree,'name','level','rpart.id','isLeaf',children= function(x){sapply(x$children,function(child)child$rpart.id)})
-sorted_levels<-to_dataframe[order(to_dataframe$level),]
-max_levels<-max(sorted_levels$level)
-print(length(sorted_levels))
+library(dplyr)
+level_combinations<- function(data_tree_object){  
+  library(stringr)
   
-leaves<-c()
-leaves_test<-c()
-  
-for (i in 1:length(sorted_levels$level)){
-  if(sorted_levels$isLeaf[i]==TRUE){ 
-    leaf<-sorted_levels$rpart.id[i]
-    leaves<-c(leaves,leaf)
-    cat("Level",sorted_levels$level[i]+1,":",leaves,"\n")
-  }
-
-  else{
-    for (n in 1:length(sorted_levels$level))
-    {
-      if(sorted_levels$isLeaf[n]==TRUE && sorted_levels$level[i] >= sorted_levels$level[n]){ 
-        leaf_test<-sorted_levels$rpart.id[n]
-        leaves_test<-c(leaves_test,leaf_test)}
-    
-    }
-    level_children<-na.omit(sorted_levels[sorted_levels$level[i],]$children)
-    cat("Level",sorted_levels$level[i]+1,":",level_children,leaves_test, "\n")
-    
-  }
-  }
-
-<<<<<<< HEAD
-#Finding children
- for (i in 1:max(sorted_levels$level)){
-   level_children<- na.omit(sorted_levels[sorted_levels$level==i,]$children)
-   
-   cat("Level",i+1,":",level_children, "\n")
-  }
+  #Convert the data.tree object into a dataframe and sort the dataframe
+  to_dataframe<-ToDataFrameTree(data_tree_object,'name','level','rpart.id','isLeaf',children= function(x){sapply(x$children,function(child)child$rpart.id)})
+  sorted_levels<-to_dataframe[order(to_dataframe$level),]
  
-=======
+  total_level_children<-list()
+  leaves<-NULL
+  
+  #Loop through levels of a tree
+  for(i in 1:max(sorted_levels$level)){
+    
+    #Current level's children
+    level_children<- na.omit(sorted_levels[sorted_levels$level==i,]$children)
+    level_children<-str_trim(unlist(strsplit(level_children,split=",")))
+    
+    #Array of all children in a tree
+    total_level_children<-append(total_level_children,list(level_children))
+    
+    
+    #Ensure that there is a previous level
+    if(length(total_level_children)>=1)
+    {
+      #Loop through previous level
+      sapply(total_level_children[i-1],function(x){
+             
+            #Loop through children in previous level
+            sapply(x,function(y){
+            
+            #Loop through sorted levels to get rpart.id of leaves
+            for (j in 1:nrow(sorted_levels)){
+              if(sorted_levels[j,]$rpart.id==y && sorted_levels[j,]$isLeaf==TRUE)
+                {
+                    leaves<<-c(leaves,sorted_levels[j,]$rpart.id)
+                }
+            }
+       })})
+      }
+             cat("Level",i+1,":",unique(level_children),unique(leaves), "\n")
+      }
+  }
 
->>>>>>> c992a37a0050ae532f3b13a98ffba13c49287302
-
-
-
+level_combinations(default_datatree)  
 
 
 
