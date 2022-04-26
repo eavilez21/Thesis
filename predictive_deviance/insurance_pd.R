@@ -151,7 +151,7 @@ level_combinations<- function(data_tree_object){
       }
   }
 
-level_combinations(default_datatree)  
+level_combinations(default_new_datatree)  
 
 
 
