@@ -45,9 +45,9 @@ library(rpart)
 library(rattle)
 library(rpart.plot)
 library(data.tree)
-library(tree)
+
 # library(RColorBrewer)
-insurance_rpart <- rpart(pd_loocv~., data=insurance, minsplit=2, minbucket=1,cp=.00000000000001)
+insurance_rpart <- rpart(pd_loocv~., data=insurance, minsplit=2, minbucket=1, cp=0)
 # fancyRpartPlot(insurance_rpart,caption=NULL)
 
 # insurance_data_tree <- as.Node(insurance_rpart, digits = getOption("digits") - 1, use.n=TRUE)
@@ -63,6 +63,7 @@ deviant_nodes <- all_deviants[all_deviants$var != "<leaf>", ]
 
 # Using semcoa package to find deviant groups
 library(semcoa)
+library(purrr)
 insurance_pd <- cbind(insurance, PD=pd_loocv)
 predictions <- list(
   pd_data = insurance_pd,
@@ -98,14 +99,15 @@ plot(new_sorted_pd, col=rgb(0.7, 0.7, 0.7, 0.5), pch=19)
 abline(h=new_pd_95)
 
 
-new_insurance_rpart<-rpart(new_pd_loocv~., data=new_insurance, minsplit=2, minbucket=1,cp=0)
+new_insurance_rpart <- rpart(new_pd_loocv~., data=new_insurance, minsplit=2, minbucket=1,cp=0)
+node_leaves <- semcoa:::tree_node_cases(new_insurance_rpart) # WARNING: long-running
 
 plot(new_insurance_rpart)
-default_new_insurance_rpart <- rpart(new_pd_loocv~., data=new_insurance)
-fancyRpartPlot(default_new_insurance_rpart, caption= NULL)
+simple_new_insurance_rpart <- rpart(new_pd_loocv~., data=new_insurance)
+fancyRpartPlot(simple_new_insurance_rpart, caption= NULL)
 
 library(data.tree)
-default_new_datatree <- as.Node(default_new_insurance_rpart)
+simple_new_datatree <- as.Node(simple_new_insurance_rpart)
 
 library(dplyr)
 level_combinations<- function(data_tree_object){  
@@ -148,10 +150,13 @@ level_combinations<- function(data_tree_object){
        })})
       }
              cat("Level",i+1,":",unique(level_children),unique(leaves), "\n")
-      }
   }
+  return(
+    list(level_children, leaves)
+  )
+}
 
-level_combinations(default_new_datatree)  
+levels <- level_combinations(simple_new_datatree)  
 
 
 
@@ -176,16 +181,16 @@ level_combinations(default_new_datatree)
 
 
 # TODO: Heterogeneity
-# 6. Automatically identify the combinations of 2, 3, 4, 5, 7 groups
+# 6. Automatically identify the combinations of 2, 3, 4, 5, 7 groups --> DEBUG
 #   - write a function that, given the levels, will return child nodes
 #     - e.g., level=2 --> nodes 2, 3
 #     - e.g., level=3 --> nodes 4, 5, 3
 #     - e.g., level=4 --> nodes 4, 10, 11, 3
-# 7. Get the case numbers for any set of groups from the rpart
-#     - e.g., groups 4, 5, 3 --> list of 3 vectors (each has cases for its group) -- see semcoa
+# 7. Get the case numbers for any set of nodes from the rpart --> DONE
+#     - e.g., nodes 4, 5, 3 --> list of 3 vectors (each has cases for its group) -- see semcoa
 # 8. Evaluate what makes these groups different
-#   - coefficients
-#   - avg pd, etc.
+#   - explanatory: coefficients, R-squares, etc.
+#   - predictive: avg pd, etc. ?
 # 9. How many groups are interesting?
 #   - create something like a screeplot with some metric to compare 
 # 10. Compare our groupings with other standard heterogeneity methods
