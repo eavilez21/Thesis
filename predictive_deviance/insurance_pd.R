@@ -1,6 +1,7 @@
 set.seed(3498348)
 insurance <- read.csv("data/insurance.csv")
 insurance <- insurance[sample(nrow(insurance)),]
+insurance <- insurance[sample(nrow(insurance)),]
 insurance$sex <- as.factor(insurance$sex)
 insurance$smoker <- as.factor(insurance$smoker)
 insurance$region <- as.factor(insurance$region)
@@ -102,7 +103,29 @@ abline(h=new_pd_95)
 new_insurance_rpart <- rpart(new_pd_loocv~., data=new_insurance, minsplit=2, minbucket=1,cp=0)
 node_leaves <- semcoa:::tree_node_cases(new_insurance_rpart) # WARNING: long-running
 
-plot(new_insurance_rpart)
+#Find the number of cases that belong to a node
+cases_per_node<-function(x){
+  z<-c()
+  number_of_cases<-sapply(1:length(x),function(y){
+    z[[y]]<<-data.frame("NodeIndex"=match(x[y],node_leaves),"NodeName"=names(x[y]),"TotalNodeCases"=length(x[[y]]))} )
+  
+  return(z)}
+
+cases_per_node(c(node_leaves[900],node_leaves[1000]))[1]
+
+#Run regression on cases(subset) of a node
+library(broom)
+subsets_models<-sapply(1:length(node_leaves), function(x){
+  if(length(node_leaves[[x]])>6){
+  node_subset_elements<-insurance[node_leaves[[x]],]
+  node_subset_elements_number<-sapply(lapply(node_subset_elements, unique), length)
+  node_model<-lm(charges~.,data=node_subset_elements[,node_subset_elements_number>1])
+  model_results<-data.frame(names(node_leaves[x]),t(node_model$coefficients),summary(node_model)$r.squared)}})
+
+node_lm_results<-data.table::rbindlist(subsets_models, fill = TRUE)
+write.csv(node_lm_results,"node_lm_results.csv", row.names = FALSE)
+
+
 simple_new_insurance_rpart <- rpart(new_pd_loocv~., data=new_insurance)
 fancyRpartPlot(simple_new_insurance_rpart, caption= NULL)
 
@@ -110,9 +133,10 @@ library(data.tree)
 simple_new_datatree <- as.Node(simple_new_insurance_rpart)
 
 library(dplyr)
+#Find the nodes that belong to a level
 level_combinations<- function(data_tree_object){  
   library(stringr)
-  
+  return_level<-c()
   #Convert the data.tree object into a dataframe and sort the dataframe
   to_dataframe<-ToDataFrameTree(data_tree_object,'name','level','rpart.id','isLeaf',children= function(x){sapply(x$children,function(child)child$rpart.id)})
   sorted_levels<-to_dataframe[order(to_dataframe$level),]
@@ -147,26 +171,13 @@ level_combinations<- function(data_tree_object){
                     leaves<<-c(leaves,sorted_levels[j,]$rpart.id)
                 }
             }
-       })})
-      }
-             cat("Level",i+1,":",unique(level_children),unique(leaves), "\n")
-  }
-  return(
-    list(level_children, leaves)
-  )
-}
+       })})}      
+             return_level[[i+1]]<-noquote(c(level_children,leaves))
+             #cat("Level",i+1,":",unique(level_children),unique(leaves), "\n")
+             }
+  return(return_level)}
 
-levels <- level_combinations(simple_new_datatree)  
-
-
-
-
-
-
-
-
-
-
+level_combinations(simple_new_datatree)[[7]]
 
 
 
