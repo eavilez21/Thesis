@@ -177,33 +177,49 @@ level_combinations<- function(data_tree_object){
              }
   return(return_level)}
 
-level_combinations(simple_new_datatree)[[7]]
+group_levels <- level_combinations(simple_new_datatree)
 
 
 
 
 
-
-
-
-
-
+# # Multiple correlation example --> not working, getting Rsq == 1
+# # 1 group
+# coeffs_1 <- t(node_lm_results[node_lm_results$names.node_leaves.x.. %in% 1, 2:10])
+# # 2 groups
+# coeffs_2 <- t(node_lm_results[node_lm_results$names.node_leaves.x.. %in% 2:3, 2:10])
+# # 3 groups
+# coeffs_3 <- t(node_lm_results[node_lm_results$names.node_leaves.x.. %in% 3:5, 2:10])
+# 
+# lm_1_3 <- lm(coeffs_1 ~ coeffs_3)
+# summary(lm_1_3) # look at r_sq
 
 
 
 # TODO: Heterogeneity
-# 6. Automatically identify the combinations of 2, 3, 4, 5, 7 groups --> DEBUG
-#   - write a function that, given the levels, will return child nodes
+# 6. Automatically identify the combinations of 2, 3, 4, 5, 7 groups
+#   - write a function that, given the levels, will return child nodes --> DONE
 #     - e.g., level=2 --> nodes 2, 3
 #     - e.g., level=3 --> nodes 4, 5, 3
 #     - e.g., level=4 --> nodes 4, 10, 11, 3
-# 7. Get the case numbers for any set of nodes from the rpart --> DONE
-#     - e.g., nodes 4, 5, 3 --> list of 3 vectors (each has cases for its group) -- see semcoa
+#   - add a level 1, and remove last redundant level (7) --> DEBUG
+
 # 8. Evaluate what makes these groups different
-#   - explanatory: coefficients, R-squares, etc.
+#   - explanatory: coefficients, R-squares, etc. --> DONE
+#      - get a list: each element is also a list: --> refactor
+#        - node_name
+#        - coefficients: named vector (with NAs as needed)
+#        - rsq
+#        - PD
 #   - predictive: avg pd, etc. ?
-# 9. How many groups are interesting?
-#   - create something like a screeplot with some metric to compare 
+# 9. Which level / How many groups are interesting?
+#   - create something like a screeplot with some *metric* to compare 
+#     - single metric: R^2, PD, MSE --> TODO
+#        - average, sd, etc.
+#     - similarity index: e.g., two groups vs. three groups --> IGNORE
+#        - multiple correlation of coefficients
+#           R: group1-coefficients vs. groups2,3-coefficients
+#           R: group1-coefficients vs. groups4,5,3-coefficients
 # 10. Compare our groupings with other standard heterogeneity methods
 #   - ????
 
@@ -227,3 +243,6 @@ level_combinations(simple_new_datatree)[[7]]
 #   result: done!
 # - 5. Let's see if the resulting deviance tree has natural large "subgroups"
 #   result: done! finds 7 groups (N ~ 40-498)
+#
+# 7. Get the case numbers for any set of nodes from the rpart --> DONE
+#     - e.g., nodes 4, 5, 3 --> list of 3 vectors (each has cases for its group) -- see semcoa
