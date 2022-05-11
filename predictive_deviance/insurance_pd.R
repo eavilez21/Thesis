@@ -47,6 +47,10 @@ library(rattle)
 library(rpart.plot)
 library(data.tree)
 
+sorted_pd["3"]
+
+
+
 # library(RColorBrewer)
 insurance_rpart <- rpart(pd_loocv~., data=insurance, minsplit=2, minbucket=1, cp=0)
 # fancyRpartPlot(insurance_rpart,caption=NULL)
@@ -103,6 +107,10 @@ abline(h=new_pd_95)
 new_insurance_rpart <- rpart(new_pd_loocv~., data=new_insurance, minsplit=2, minbucket=1,cp=0)
 node_leaves <- semcoa:::tree_node_cases(new_insurance_rpart) # WARNING: long-running
 
+lm(charges~.,data=insurance[node_leaves$`3`,])
+
+
+
 #Find the number of cases that belong to a node
 cases_per_node<-function(x){
   z<-c()
@@ -120,17 +128,25 @@ subsets_models<-sapply(1:length(node_leaves), function(x){
   node_subset_elements<-insurance[node_leaves[[x]],]
   node_subset_elements_number<-sapply(lapply(node_subset_elements, unique), length)
   node_model<-lm(charges~.,data=node_subset_elements[,node_subset_elements_number>1])
-  model_results<-data.frame(names(node_leaves[x]),t(node_model$coefficients),summary(node_model)$r.squared)}})
+  model_results<-data.frame(names(node_leaves[x]),t(node_model$coefficients),summary(node_model)$r.squared)
+ }})
+
 
 node_lm_results<-data.table::rbindlist(subsets_models, fill = TRUE)
+colnames(node_lm_results)[1]<-"nodename"
+colnames(node_lm_results)[2]<-"intercept"
+colnames(node_lm_results)[11]<-"r-squared"
 write.csv(node_lm_results,"node_lm_results.csv", row.names = FALSE)
+node_lm_results_list<-list(node_lm_results[,1],node_lm_results[,2:10],node_lm_results[,11])
 
-
-simple_new_insurance_rpart <- rpart(new_pd_loocv~., data=new_insurance)
+node_lm_results
+simple_new_insurance_rpart <- rpart(new_pd_loocv~.,data=new_insurance)
 fancyRpartPlot(simple_new_insurance_rpart, caption= NULL)
+simple_node_leaves <- semcoa:::tree_node_cases(simple_new_insurance_rpart)
 
 library(data.tree)
 simple_new_datatree <- as.Node(simple_new_insurance_rpart)
+
 
 library(dplyr)
 #Find the nodes that belong to a level
@@ -145,7 +161,7 @@ level_combinations<- function(data_tree_object){
   leaves<-NULL
   
   #Loop through levels of a tree
-  for(i in 1:max(sorted_levels$level)){
+  for(i in 1:(max(sorted_levels$level)-1)){
     
     #Current level's children
     level_children<- na.omit(sorted_levels[sorted_levels$level==i,]$children)
@@ -173,21 +189,22 @@ level_combinations<- function(data_tree_object){
             }
        })})}      
              return_level[[i+1]]<-noquote(c(level_children,leaves))
+             return_level[[1]]<-sorted_levels[1,]$rpart.id
              #cat("Level",i+1,":",unique(level_children),unique(leaves), "\n")
              }
   return(return_level)}
 
 level_combinations(simple_new_datatree)[[7]]
 
+levels_rsquared<-sapply(level_combinations(simple_new_datatree),function(x){ sapply(x,function(y){node_lm_results[node_lm_results$nodename==y,]$`r-squared`})} )
+average_levels_rsquared<- sapply(levels_rsquared,function(z)(reduce(z,sum))/length(z))
+ 
+levels_pd<-sapply(level_combinations(simple_new_datatree),function(x){ sapply(x,function(y){sorted_pd[toString(y)]})} )
+average_levels_pd<- sapply(levels_pd,function(z)(reduce(z,sum))/length(z))
+average_total_sorted_pd<-reduce(sorted_pd,sum)/length(sorted_pd)
 
-
-
-
-
-
-
-
-
+plot(average_levels_rsquared,type="o",xlab = "Level", ylab = "Average R-squared",col="blue")
+plot(average_levels_pd,type="o",xlab = "Level", ylab = "Average PD",col="green")
 
 
 
