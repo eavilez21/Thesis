@@ -17,26 +17,6 @@ pd_fold <- function(i, nfold, model, outcome, dataset, fitted_scores) {
   fitted_scores[test_indices] - predictions # PD
 }
 
-pe_fold <- function(i, nfold, model, outcome, dataset) {
-    folds <- cut(1:nrow(dataset), breaks=nfold, labels=FALSE)
-    test_indices <- which(folds==i, arr.ind=TRUE)
-    test  <- dataset[test_indices, ]
-    train <- dataset[-test_indices, ]
-    trained <- lm(model, data = train)
-    predicted_outcome <- predict(trained, test)
- 
-#   # TODO: actual - prediction
-     pe <- test[, outcome] - predicted_outcome
-#   # mean(pe^2) # mse_out?
- }
-kfold_pe <- function(model, outcome, dataset, nfold=NULL) {
-  if (is.null(nfold)) {
-    nfold <- nrow(dataset)
-  }
-  unlist(sapply(1:nfold, pe_fold, nfold=nfold, 
-                model=model, outcome=outcome, dataset=dataset))
-}
-new_pe_loocv <- kfold_pe(charges ~ ., outcome='charges', dataset = new_insurance)
 
 kfold_pd <- function(model, outcome, dataset, nfold=NULL) {
   if (is.null(nfold)) {
@@ -115,6 +95,29 @@ no_deviant_group_cases(c("A","B","C","D","E"),insurance_rpart,dtree)
 #Model less deviants
 new_insurance <- insurance[-all_deviants, ]
 new_pd_loocv <- kfold_pd(charges ~ ., outcome='charges', dataset = new_insurance)
+
+#Finding predictive error
+pe_fold <- function(i, nfold, model, outcome, dataset) {
+  folds <- cut(1:nrow(dataset), breaks=nfold, labels=FALSE)
+  test_indices <- which(folds==i, arr.ind=TRUE)
+  test  <- dataset[test_indices, ]
+  train <- dataset[-test_indices, ]
+  trained <- lm(model, data = train)
+  predicted_outcome <- predict(trained, test)
+  
+  #   # TODO: actual - prediction
+  pe <- test[, outcome] - predicted_outcome
+  #   # mean(pe^2) # mse_out?
+}
+kfold_pe <- function(model, outcome, dataset, nfold=NULL) {
+  if (is.null(nfold)) {
+    nfold <- nrow(dataset)
+  }
+  unlist(sapply(1:nfold, pe_fold, nfold=nfold, 
+                model=model, outcome=outcome, dataset=dataset))
+}
+new_pe_loocv <- kfold_pe(charges ~ ., outcome='charges', dataset = new_insurance)
+
 
 new_sorted_pd <- sort(new_pd_loocv)
 new_pd_95 <- quantile(new_sorted_pd, probs = c(0.025, 0.975))
