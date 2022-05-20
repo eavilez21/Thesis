@@ -38,18 +38,6 @@ kfold_pe <- function(model, outcome, dataset, nfold=NULL) {
 }
 new_pe_loocv <- kfold_pe(charges ~ ., outcome='charges', dataset = new_insurance)
 
-
-
-
-
-
-
-
-
-
-
-
-
 kfold_pd <- function(model, outcome, dataset, nfold=NULL) {
   if (is.null(nfold)) {
     nfold <- nrow(dataset)
@@ -80,10 +68,6 @@ library(rpart)
 library(rattle)
 library(rpart.plot)
 library(data.tree)
-
-sorted_pd["3"]
-
-
 
 # library(RColorBrewer)
 insurance_rpart <- rpart(pd_loocv~., data=insurance, minsplit=2, minbucket=1, cp=0)
