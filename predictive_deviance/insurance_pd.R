@@ -17,18 +17,38 @@ pd_fold <- function(i, nfold, model, outcome, dataset, fitted_scores) {
   fitted_scores[test_indices] - predictions # PD
 }
 
-# mse_out_fold <- function(i, nfold, model, outcome, dataset) {
-#   folds <- cut(1:nrow(dataset), breaks=nfold, labels=FALSE)
-#   test_indices <- which(folds==i, arr.ind=TRUE)
-#   test  <- dataset[test_indices, ]
-#   train <- dataset[-test_indices, ]
-#   trained <- lm(model, data = train)
-#   predicted_outcome <- predict(trained, test)
-#   
+pe_fold <- function(i, nfold, model, outcome, dataset) {
+    folds <- cut(1:nrow(dataset), breaks=nfold, labels=FALSE)
+    test_indices <- which(folds==i, arr.ind=TRUE)
+    test  <- dataset[test_indices, ]
+    train <- dataset[-test_indices, ]
+    trained <- lm(model, data = train)
+    predicted_outcome <- predict(trained, test)
+ 
 #   # TODO: actual - prediction
-#   pe <- test[, outcome] - predicted_outcome
+     pe <- test[, outcome] - predicted_outcome
 #   # mean(pe^2) # mse_out?
-# }
+ }
+kfold_pe <- function(model, outcome, dataset, nfold=NULL) {
+  if (is.null(nfold)) {
+    nfold <- nrow(dataset)
+  }
+  unlist(sapply(1:nfold, pe_fold, nfold=nfold, 
+                model=model, outcome=outcome, dataset=dataset))
+}
+new_pe_loocv <- kfold_pe(charges ~ ., outcome='charges', dataset = new_insurance)
+
+
+
+
+
+
+
+
+
+
+
+
 
 kfold_pd <- function(model, outcome, dataset, nfold=NULL) {
   if (is.null(nfold)) {
@@ -45,6 +65,7 @@ kfold_pd <- function(model, outcome, dataset, nfold=NULL) {
 # pd_5fold <- kfold_pd(charges ~ ., outcome='charges', dataset = insurance, nfold=5)
 # pd_10fold <- kfold_pd(charges ~ ., outcome='charges', dataset = insurance, nfold=10)
 pd_loocv <- kfold_pd(charges ~ ., outcome='charges', dataset = insurance)
+
 
 # VISUALIZATIONS
 
@@ -120,12 +141,17 @@ abline(h=new_pd_95)
 new_insurance_rpart <- rpart(new_pd_loocv~., data=new_insurance, minsplit=2, minbucket=1,cp=0)
 node_leaves <- semcoa:::tree_node_cases(new_insurance_rpart) # WARNING: long-running
 
-lm(charges~.,data=insurance[node_leaves$`3`,])
+
+
 
 # Gets average PD of all cases under a node
 # e.g., node_pd("1", node_leaves, new_pd_loocv)
 node_pd <- function(node_name, node_leaves, cases_pd) {
   mean(na.omit(new_pd_loocv[as.character(na.omit(node_leaves[[node_name]]))]))
+}
+
+node_pe <- function(node_name, node_leaves, cases_pe) {
+  mean(na.omit(new_pe_loocv[as.character(na.omit(node_leaves[[node_name]]))]))
 }
 
 #Find the number of cases that belong to a node
@@ -227,6 +253,11 @@ average_levels_pd <- sapply(levels_pd, mean)
 # average_total_sorted_pd<-reduce(sorted_pd,sum)/length(sorted_pd)
 plot(average_levels_pd, type="o", xlab = "Level", ylab = "Average PD", col="green")
 abline(h=0)
+
+levels_pe <- sapply(all_levels, function(x){ sapply(x, function(y) {node_pe(y, node_leaves, new_pe_loocv)})} )
+average_levels_pe <- sapply(levels_pe, mean)
+plot(average_levels_pe, type="o", xlab = "Level", ylab = "Average PE", col="green")
+abline(h=l0)
 
 
 
