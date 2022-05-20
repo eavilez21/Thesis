@@ -118,18 +118,13 @@ kfold_pe <- function(model, outcome, dataset, nfold=NULL) {
 }
 new_pe_loocv <- kfold_pe(charges ~ ., outcome='charges', dataset = new_insurance)
 
-
 new_sorted_pd <- sort(new_pd_loocv)
 new_pd_95 <- quantile(new_sorted_pd, probs = c(0.025, 0.975))
 plot(new_sorted_pd, col=rgb(0.7, 0.7, 0.7, 0.5), pch=19)
 abline(h=new_pd_95)
 
-
 new_insurance_rpart <- rpart(new_pd_loocv~., data=new_insurance, minsplit=2, minbucket=1,cp=0)
 node_leaves <- semcoa:::tree_node_cases(new_insurance_rpart) # WARNING: long-running
-
-
-
 
 # Gets average PD of all cases under a node
 # e.g., node_pd("1", node_leaves, new_pd_loocv)
@@ -161,15 +156,12 @@ subsets_models<-sapply(1:length(node_leaves), function(x){
   model_results<-data.frame(names(node_leaves[x]),t(node_model$coefficients),summary(node_model)$r.squared)
  }})
 
-
 node_lm_results<-data.table::rbindlist(subsets_models, fill = TRUE)
 colnames(node_lm_results)[1]<-"nodename"
 colnames(node_lm_results)[2]<-"intercept"
 colnames(node_lm_results)[11]<-"r-squared"
 write.csv(node_lm_results,"node_lm_results.csv", row.names = FALSE)
 # node_lm_results_list<-list(node_lm_results[,1],node_lm_results[,2:10],node_lm_results[,11])
-
-node_lm_results
 
 # Pruned insurance tree with PD
 simple_new_insurance_rpart <- rpart(new_pd_loocv~.,data=new_insurance)
@@ -244,7 +236,7 @@ abline(h=0)
 levels_pe <- sapply(all_levels, function(x){ sapply(x, function(y) {node_pe(y, node_leaves, new_pe_loocv)})} )
 average_levels_pe <- sapply(levels_pe, mean)
 plot(average_levels_pe, type="o", xlab = "Level", ylab = "Average PE", col="green")
-abline(h=l0)
+
 
 
 
@@ -262,8 +254,12 @@ abline(h=l0)
 # 9. How many groups are interesting? --> DOING
 #   - create something like a screeplot with some metric to compare (R^2, PD, etc.) --> DONE
 #   - compute kfold_mse_out and create plot
-# 10. Compare our groupings with other standard heterogeneity methods
+# 10. Produce report of all findings --> TODO
+#   - Word report with tables/lists (levels_pd/pe, etc.)/visualizations
+#   - Outline of thesis
+# 11. Compare our groupings with other standard heterogeneity methods
 #   - ????
+
 
 
 # DONE
