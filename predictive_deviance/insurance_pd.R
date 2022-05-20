@@ -256,10 +256,13 @@ abline(h=l0)
 # 8. Evaluate what makes these groups different --> DONE
 #   - explanatory: coefficients, R-squares, etc.
 #   - predictive: avg pd, etc. ?
-# 9. How many groups are interesting? --> DOING
+# 9. How many groups are interesting? --> REVIEW
 #   - create something like a screeplot with some metric to compare (R^2, PD, etc.) --> DONE
 #   - compute kfold_mse_out and create plot
-# 10. Compare our groupings with other standard heterogeneity methods
+# 10. Produce report of all findings --> TODO
+#   - Word report with tables/lists (levels_pd/pe, etc.)/visualizations
+#   - Outline of thesis
+# 11. Compare our groupings with other standard heterogeneity methods
 #   - ????
 
 
