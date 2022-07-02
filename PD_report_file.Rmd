@@ -1,4 +1,11 @@
-# This is an implementation of predictive and predictive-deviance oriented segmentation and is intended to be executedin Rstudio
+---
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r echo=T, results='hide'}
+# This is an implementation of predictive and predictive-deviance oriented segmentation and is intended to be executed in RStudio
 
 # Data Preparation
 set.seed(3498348)
@@ -39,7 +46,7 @@ pd_loocv <- kfold_pd(charges ~ ., outcome='charges', dataset = insurance)
 # PD Plot
 sorted_pd <- sort(pd_loocv)
 pd_95 <- quantile(sorted_pd, probs = c(0.025, 0.975))
-plot(sorted_pd,col=rgb(0.7, 0.7, 0.7, 0.5), pch=19, xlab = "Cases", ylab = "Predictive Deviance", main = "Sorted Predictive Deviance")
+plot(sorted_pd,col=rgb(0.7, 0.7, 0.7, 0.5), pch=19,xlab = "Cases", ylab = "Predictive Deviance",main = "Sorted Predictive Deviance")
 abline(h=pd_95)
 
 # Deviance Tree
@@ -49,7 +56,7 @@ library(rpart.plot)
 library(data.tree)
 
 # Find deviant nodes
-insurance_rpart <- rpart(pd_loocv ~ ., data = insurance, minsplit = 2, minbucket = 1, cp = 0)
+insurance_rpart <- rpart(pd_loocv~., data = insurance, minsplit = 2, minbucket = 1, cp = 0)
 
 frame_deviants <- (insurance_rpart$frame$yval <= pd_95["2.5%"]) | (insurance_rpart$frame$yval >= pd_95["97.5%"])
 all_deviants <- insurance_rpart$frame[frame_deviants, ]
@@ -88,13 +95,12 @@ new_pd_loocv <- kfold_pd(charges ~ ., outcome = 'charges', dataset = new_insuran
 
 new_sorted_pd <- sort(new_pd_loocv)
 new_pd_95 <- quantile(new_sorted_pd, probs = c(0.025, 0.975))
-plot(new_sorted_pd, col = rgb(0.7, 0.7, 0.7, 0.5), pch = 19, main = "Sorted Model without Deviants")
+plot(new_sorted_pd, col = rgb(0.7, 0.7, 0.7, 0.5), pch = 19,main = "Sorted Model without Deviants")
 abline(h = new_pd_95)
 
 library(rpart)
-new_insurance_rpart <- rpart(new_pd_loocv ~ ., data = new_insurance, minsplit = 2, minbucket = 1, cp = 0)
+new_insurance_rpart <- rpart(new_pd_loocv~., data = new_insurance, minsplit = 2, minbucket = 1,cp = 0)
 node_leaves <- semcoa:::tree_node_cases(new_insurance_rpart) # WARNING: long-running
-length(node_leaves$`2`)
 
 # Get average PD of all cases under a node
 node_pd <- function(node_name, node_leaves, cases_pd){
@@ -119,7 +125,7 @@ subsets_models <- sapply(1:length(node_leaves), function(x){
   node_subset_elements_number <- sapply(lapply(node_subset_elements, unique), length)
   node_model <- lm(charges~., data = node_subset_elements[, node_subset_elements_number>1])
   model_results <- data.frame(names(node_leaves[x]), t(node_model$coefficients), summary(node_model)$r.squared)
-  
+  print(model_results)
 }})
 
 node_lm_results <- data.table::rbindlist(subsets_models, fill = TRUE)
@@ -129,8 +135,8 @@ colnames(node_lm_results)[11]<- "r-squared"
 write.csv(node_lm_results,"node_lm_results.csv", row.names = FALSE)
 
 # Pruned insurance tree with PD
-simple_new_insurance_rpart <- rpart(new_pd_loocv ~ ., data = new_insurance)
-fancyRpartPlot(simple_new_insurance_rpart, caption = NULL)
+simple_new_insurance_rpart <- rpart(new_pd_loocv~., data = new_insurance)
+fancyRpartPlot(simple_new_insurance_rpart, caption= NULL)
 simple_node_leaves <- semcoa:::tree_node_cases(simple_new_insurance_rpart)
 
 library(data.tree)
@@ -208,10 +214,9 @@ pe_fold <- function(i, nfold, model, outcome, dataset){
   test  <- dataset[test_indices, ]
   train <- dataset[-test_indices, ]
   trained <- lm(model, data = train)
-  print(test[, outcome][1])
   predicted_outcome <- predict(trained, test)
 
-  pe <- (test[, outcome] - predicted_outcome)^2
+  pe <- test[, outcome] - predicted_outcome
 }
 
 kfold_pe <- function(model, outcome, dataset, nfold = NULL) {
@@ -224,11 +229,8 @@ kfold_pe <- function(model, outcome, dataset, nfold = NULL) {
 
 new_pe_loocv <- kfold_pe(charges ~ ., outcome = 'charges', dataset = new_insurance)
 
-
-node_pe("2",node_leaves,new_pe_loocv)
-
 levels_pe <- sapply(all_levels, function(x){ sapply(x, function(y) {node_pe(y, node_leaves, new_pe_loocv)})} )
-average_levels_pe <- sapply(levels_pe, function (x) mean(x))
+average_levels_pe <- sapply(levels_pe, function (x) mean(x*x))
 
 plot(average_levels_pe, type = "o", xlab = "Level", ylab = "Average PE", col = "green", main="Average PE per Level")
 
@@ -245,5 +247,8 @@ lm(charges~.,data = insurance[node_leaves[["3"]], ])
 lm(charges~.,data = insurance[node_leaves[["4"]], ])
 lm(charges~.,data = insurance[node_leaves[["5"]], ])
 
-node_2_data <- new_insurance[node_leaves[["2"]],]
-saveRDS(node_2_data,file = "node_2.rds")
+
+
+
+```
+
