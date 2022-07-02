@@ -245,5 +245,5 @@ lm(charges~.,data = insurance[node_leaves[["3"]], ])
 lm(charges~.,data = insurance[node_leaves[["4"]], ])
 lm(charges~.,data = insurance[node_leaves[["5"]], ])
 
-node_2_data <- new_insurance[node_leaves[["2"]],]
+node_2_data <- insurance[node_leaves[["2"]],]
 saveRDS(node_2_data,file = "node_2.rds")

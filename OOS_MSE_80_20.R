@@ -2,7 +2,7 @@ library(caret)
 library(dplyr)
 
 node_2 <- readRDS("node_2.rds")
-data <- new_insurance
+data <- insurance
 
 training_obs <- node_2$charges %>% createDataPartition(p = 0.8, list = FALSE)
 
